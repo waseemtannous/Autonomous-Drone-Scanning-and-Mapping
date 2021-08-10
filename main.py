@@ -47,5 +47,12 @@ def drone360():
 
 
 if __name__ == '__main__':
-    x, y, z = readCSV('PlotData/pointData.csv')
+    x, y, z = readCSV('PointData/pointData.csv')
     plot2D(x, z)
+    # plot2D(x, z)
+    # plotConvexHull(x, y)
+    KMeansAlgo(x, z)
+    x1 = [2.87091167, 0.39248181, 1.67489614, 15.01441968]
+    y1 = [1.00472885, 1.02433301, -0.04094384, 0.6501901]
+    plot2D(x1, y1)
+
