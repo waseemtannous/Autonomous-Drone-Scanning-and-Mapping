@@ -36,9 +36,9 @@ def drone360():
 
     print('Starting ...')
 
-    while angle < MAX_ANGLE:
-        # move(drone)
+    while angle <= MAX_ANGLE:
         drone.rotate_clockwise(10)
+        # move(drone)
         angle += 10
         sleep(3)
 
@@ -47,12 +47,22 @@ def drone360():
 
 
 if __name__ == '__main__':
-    x, y, z = readCSV('PointData/pointData.csv')
-    plot2D(x, z)
     # plot2D(x, z)
-    # plotConvexHull(x, y)
-    KMeansAlgo(x, z)
-    x1 = [2.87091167, 0.39248181, 1.67489614, 15.01441968]
-    y1 = [1.00472885, 1.02433301, -0.04094384, 0.6501901]
-    plot2D(x1, y1)
-
+    # # plotConvexHull(x, y)
+    # KMeansAlgo(x, z)
+    # x1 = [2.87091167, 0.39248181, 1.67489614, 15.01441968]
+    # y1 = [1.00472885, 1.02433301, -0.04094384, 0.6501901]
+    # plot2D(x1, y1)
+    # drone360()
+    x, y, z = readCSV('PointData/pointDataSaloon.csv')
+    # for i in range(len(x)):
+    #     x[i] = x[i] * 100
+    #
+    # for i in range(len(y)):
+    #     y[i] = y[i] * 100
+    #
+    # for i in range(len(z)):
+    #     z[i] = z[i] * 100
+    #
+    plot2D(x, z)
+    showCloud(x, y, z)
