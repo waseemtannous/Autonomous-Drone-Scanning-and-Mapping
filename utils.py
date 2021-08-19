@@ -1,6 +1,7 @@
 from os import chdir, system
 from sklearn.cluster import KMeans
-from numpy import array
+from numpy import array, asarray
+from math import sqrt
 
 
 # reads csv file and returns x, y, z arrays
@@ -24,14 +25,34 @@ def runOrbSlam2():
 
 
 # K means algorithm to find clusters centers
-def KMeansAlgo(x, y):
+def KMeansAlgo(x, y, numberOfClusters):
     points = []
     for i in range(len(x)):
         points.append([x[i], y[i]])
     X = array(points)
-    # X = np.array([[1, 2], [1, 4], [1, 0], [10, 2], [10, 4], [10, 0]])
-    kmeans = KMeans(n_clusters=4, random_state=0).fit(X)
-    # print(kmeans.labels_)
-    # kmeans.predict([[0, 0], [12, 3]])
-    var = kmeans.cluster_centers_
-    print(kmeans.cluster_centers_)
+    kmeans = KMeans(n_clusters=numberOfClusters, random_state=0).fit(X)
+
+    # cast to array
+    points = list(kmeans.cluster_centers_)
+    centers = []
+    for point in points:
+        centers.append(list(point))
+
+    return centers
+
+
+# returns distance between 2 2D-points
+def distanceBetween2Points(point1, point2):
+    deltaX = point1[0] - point2[0]
+    deltaY = point1[1] - point2[1]
+    return sqrt((deltaX * deltaX) + (deltaY * deltaY))
+
+
+def pcdToArrays(pcd):
+    pointsArray = list(asarray(pcd.points))
+    x, y, z = [], [], []
+    for point in pointsArray:
+        x.append(point[0])
+        y.append(point[1])
+        z.append(point[2])
+    return x, y, z

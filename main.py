@@ -2,6 +2,8 @@ from djitellopy import Tello
 from time import sleep
 from utils import *
 from plot import *
+from ExitFinding import *
+from PointCloudCleaning import *
 
 import threading
 
@@ -55,6 +57,17 @@ if __name__ == '__main__':
     # plot2D(x1, y1)
     # drone360()
     x, y, z = readCSV('PointData/pointDataSaloon.csv')
+    pcd = makeCloud(x, y, z)
+    inlierPCD, outlierPCD = removeStatisticalOutlier(pcd)
+    outX, outY, outZ = pcdToArrays(outlierPCD)
+    showCloud(outX, outY, outZ)
+    # box = findBestBoundingBox(x, y, z)
+    # plot2DWithBox(x, z, box)
+    #
+    # centers = KMeansAlgo(x, z, numberOfClusters=7)
+    # print('Center of clusters: ', centers)
+    # plot2DWithClustersCenters(x, z, centers)
+
     # for i in range(len(x)):
     #     x[i] = x[i] * 100
     #
@@ -64,5 +77,4 @@ if __name__ == '__main__':
     # for i in range(len(z)):
     #     z[i] = z[i] * 100
     #
-    plot2D(x, z)
-    showCloud(x, y, z)
+    # plot2D(x, z)

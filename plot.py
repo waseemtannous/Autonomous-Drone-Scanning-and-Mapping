@@ -1,11 +1,13 @@
 from matplotlib import pyplot
 from numpy import vstack, random
 from open3d.cpu.pybind.io import read_point_cloud
-from open3d.cpu.pybind.visualization import draw_geometries
+# from open3d.cpu.pybind.visualization import draw_geometries
+from matplotlib.patches import Rectangle
 
 from pandas import DataFrame
 from pyntcloud import PyntCloud
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
+from utils import *
 
 
 # scatter 3d points in a 2d image
@@ -28,15 +30,68 @@ def plot2D(x, y):
     pyplot.show()
 
 
+# scatter 2d points with rectangle on the plot
+def plot2DWithBox(x, y, box):
+    bottomLeft = box[0]
+    topRight = box[2]
+    pyplot.scatter(x, y)
+    rect = Rectangle((bottomLeft[0], bottomLeft[1]), abs(bottomLeft[0] - topRight[0]), abs(bottomLeft[1] - topRight[1]),
+                     fill=False,
+                     color="purple",
+                     linewidth=2)
+    pyplot.gca().add_patch(rect)
+    pyplot.show()
+
+
+def plot2DWithClustersCenters(x, y, centers):
+    pyplot.scatter(x, y)
+
+    centersX = []
+    centersY = []
+    avgX = 0
+    avgY = 0
+    for coordinates in centers:
+        avgX += coordinates[0]
+        avgY += coordinates[1]
+        centersX.append(coordinates[0])
+        centersY.append(coordinates[1])
+    pyplot.scatter(centersX, centersY)
+
+    avgX = float(avgX / len(centers))
+    avgY = float(avgY / len(centers))
+
+    pyplot.scatter(avgX, avgY)
+    print('Center of clusters centers: ', [avgX, avgY])
+
+    center = avgX, avgY
+    maxDistance = float('-inf')
+    furthestCenter = None
+    for point in centers:
+        distance = distanceBetween2Points(center, point)
+        if distance > maxDistance:
+            maxDistance = distance
+            furthestCenter = point
+
+    print('furthestPoint: ', furthestCenter)
+    pyplot.scatter(furthestCenter[0], furthestCenter[1])
+
+    pyplot.show()
+
+
 # gets x, y, z coordinates and shows an interactive points cloud
 def showCloud(x, y, z):
+    cloud = makeCloud(x, y, z)
+    draw_geometries([cloud])  # Visualize the point cloud
+
+
+def makeCloud(x, y, z):
     points = vstack((x, y, z)).transpose()
     cloud = PyntCloud(DataFrame(data=points, columns=["x", "y", "z"]))
 
     cloud.to_file("PointData/output.ply")
 
     cloud = read_point_cloud("PointData/output.ply")  # Read the point cloud
-    draw_geometries([cloud])  # Visualize the point cloud
+    return cloud
 
 
 # todo: remove, not used
