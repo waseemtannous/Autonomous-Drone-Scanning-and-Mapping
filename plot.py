@@ -1,11 +1,8 @@
 from matplotlib import pyplot
-from numpy import vstack, random
-from open3d.cpu.pybind.io import read_point_cloud
-# from open3d.cpu.pybind.visualization import draw_geometries
+from numpy import random
+from open3d.cpu.pybind.visualization import draw_geometries
 from matplotlib.patches import Rectangle
 
-from pandas import DataFrame
-from pyntcloud import PyntCloud
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
 from utils import *
 
@@ -43,6 +40,8 @@ def plot2DWithBox(x, y, box):
     pyplot.show()
 
 
+# scatter all points in 2d and color the clusters centers in different color,
+# also colors the furthest center in a third color
 def plot2DWithClustersCenters(x, y, centers):
     pyplot.scatter(x, y)
 
@@ -82,16 +81,6 @@ def plot2DWithClustersCenters(x, y, centers):
 def showCloud(x, y, z):
     cloud = makeCloud(x, y, z)
     draw_geometries([cloud])  # Visualize the point cloud
-
-
-def makeCloud(x, y, z):
-    points = vstack((x, y, z)).transpose()
-    cloud = PyntCloud(DataFrame(data=points, columns=["x", "y", "z"]))
-
-    cloud.to_file("PointData/output.ply")
-
-    cloud = read_point_cloud("PointData/output.ply")  # Read the point cloud
-    return cloud
 
 
 # todo: remove, not used

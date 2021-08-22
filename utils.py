@@ -2,6 +2,10 @@ from os import chdir, system
 from sklearn.cluster import KMeans
 from numpy import array, asarray
 from math import sqrt
+from numpy import vstack
+from open3d.cpu.pybind.io import read_point_cloud
+from pandas import DataFrame
+from pyntcloud import PyntCloud
 
 
 # reads csv file and returns x, y, z arrays
@@ -48,6 +52,7 @@ def distanceBetween2Points(point1, point2):
     return sqrt((deltaX * deltaX) + (deltaY * deltaY))
 
 
+# returns the x, y, z of all points the the point cloud
 def pcdToArrays(pcd):
     pointsArray = list(asarray(pcd.points))
     x, y, z = [], [], []
@@ -56,3 +61,14 @@ def pcdToArrays(pcd):
         y.append(point[1])
         z.append(point[2])
     return x, y, z
+
+
+# make point cloud from xyz coordinates
+def makeCloud(x, y, z):
+    points = vstack((x, y, z)).transpose()
+    cloud = PyntCloud(DataFrame(data=points, columns=["x", "y", "z"]))
+
+    cloud.to_file("PointData/output.ply")
+
+    cloud = read_point_cloud("PointData/output.ply")  # Read the point cloud
+    return cloud

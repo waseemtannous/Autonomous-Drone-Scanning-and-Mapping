@@ -58,13 +58,15 @@ if __name__ == '__main__':
     # drone360()
     x, y, z = readCSV('PointData/pointDataSaloon.csv')
     pcd = makeCloud(x, y, z)
-    inlierPCD, outlierPCD = removeStatisticalOutlier(pcd)
+    inlierPCD, outlierPCD = removeStatisticalOutlier(pcd, voxel_size=0.02, nb_neighbors=10, std_ratio=1.0)
     outX, outY, outZ = pcdToArrays(outlierPCD)
-    showCloud(outX, outY, outZ)
+    # x, y, z = outX, outY, outZ
+    plot2D(outX, outZ)
+    # showCloud(outX, outY, outZ)
     # box = findBestBoundingBox(x, y, z)
     # plot2DWithBox(x, z, box)
     #
-    # centers = KMeansAlgo(x, z, numberOfClusters=7)
+    # centers = KMeansAlgo(x, z, numberOfClusters=5)
     # print('Center of clusters: ', centers)
     # plot2DWithClustersCenters(x, z, centers)
 
