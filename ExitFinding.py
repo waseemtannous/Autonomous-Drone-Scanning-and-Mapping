@@ -1,4 +1,6 @@
 from math import log2, floor, sqrt
+from random import randint
+from utils import *
 
 
 def findBestBoundingBox(x, y, z):
@@ -9,11 +11,12 @@ def findBestBoundingBox(x, y, z):
 
 
     # sort points by 'z' value
-    points.sort(key=lambda tup: tup[2])
+    # points.sort(key=lambda tup: tup[2])
 
     # divide points into log(n) groups
     subarrays = splitIntoSubarrays(points, floor(1 * log2(numberOfPoints)))
     # subarrays = splitIntoSubarrays(points, floor(sqrt(numberOfPoints)))
+    # subarrays = [points]
 
     boundingBoxes = []
 
@@ -25,26 +28,46 @@ def findBestBoundingBox(x, y, z):
     bestBox = boundingBoxes[0]
     for box in boundingBoxes:
         fitness = getBoxFitness(box, points)
-        # print(fitness)
         if fitness < bestFitness:
             bestFitness = fitness
             bestBox = box
 
-    print(bestFitness)
+    print("bestFitness: ", bestFitness)
     return bestBox
 
 
 # split array into subarrays, each one of size k.
 def splitIntoSubarrays(array, k):
-    start = 0
+    # start = 0
+    # subarrays = []
+    # while start <= len(array):
+    #     end = start + k
+    #     end = min(end, len(array))
+    #     if start == end:
+    #         break
+    #     subarrays.append(array[start: end])
+    #     start = start + k
+    # return subarrays
+
+    # subarrays = []
+    # for _ in range(k):
+    #     subarray = array[:]
+    #     for _ in range(k):
+    #         subarray.pop(randint(0, len(subarray)-1))
+    #     subarrays.append(subarray)
+    #
+    # return subarrays
+
     subarrays = []
-    while start <= len(array):
-        end = start + k
-        end = min(end, len(array))
-        if start == end:
-            break
-        subarrays.append(array[start: end])
-        start = start + k
+    for _ in range(k):
+        subarray = array[:]
+        start = randint(0, len(array) - 1)
+        end = min(start + k, len(array) - 1)
+        for i in range(start, end + 1):
+            # subarray.pop(i)
+            subarray = array[:start + 1] + array[end:]
+        subarrays.append(subarray)
+
     return subarrays
 
 
@@ -55,7 +78,7 @@ def boundingBox(points):
         """
     min_x, min_y = float('inf'), float('inf')
     max_x, max_y = float('-inf'), float('-inf')
-    for x, y, _ in points:
+    for x, _, y in points:
         min_x = min(min_x, x)
         min_y = min(min_y, y)
         max_x = max(max_x, x)
@@ -86,3 +109,30 @@ def getBoxFitness(box, points):
 
     return abs(fitness)
 
+
+# return a rectangle that bounds the room and corresponds to the walls
+def getAverageRectangle(x, y):
+    # get AVG "center" point
+    centerX = float(sum(x) / len(x))
+    centerY = float(sum(y) / len(y))
+    centerPoint = (centerX, centerY)
+
+    # get all points left of center, right, up and down
+    leftX = [(x[i], y[i]) for i in range(len(x)) if x[i] < centerX]
+    rightX = [(x[i], y[i]) for i in range(len(x)) if x[i] > centerX]
+    upY = [(x[i], y[i]) for i in range(len(y)) if y[i] > centerY]
+    downY = [(x[i], y[i]) for i in range(len(y)) if y[i] < centerY]
+
+    # calculate the distance between each point and the center
+    leftDistances = [distanceBetween2Points(point, centerPoint) for point in leftX]
+    rightDistances = [distanceBetween2Points(point, centerPoint) for point in rightX]
+    upDistances = [distanceBetween2Points(point, centerPoint) for point in upY]
+    downDistances = [distanceBetween2Points(point, centerPoint) for point in downY]
+
+    # get rectangle coordinates
+    xLeft = centerX - (2 * float(sum(leftDistances) / len(leftDistances)))
+    xRight = centerX + (2 * float(sum(rightDistances) / len(rightDistances)))
+    yUp = centerY + (2 * float(sum(upDistances) / len(upDistances)))
+    yDown = centerY - (2 * float(sum(downDistances) / len(downDistances)))
+
+    return (xLeft, yDown), (xRight, yDown), (xRight, yUp), (xLeft, yUp)

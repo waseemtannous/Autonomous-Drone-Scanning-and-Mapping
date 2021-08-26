@@ -32,7 +32,9 @@ def plot2DWithBox(x, y, box):
     bottomLeft = box[0]
     topRight = box[2]
     pyplot.scatter(x, y)
-    rect = Rectangle((bottomLeft[0], bottomLeft[1]), abs(bottomLeft[0] - topRight[0]), abs(bottomLeft[1] - topRight[1]),
+    width = topRight[0] - bottomLeft[0]
+    height = topRight[1] - bottomLeft[1]
+    rect = Rectangle((bottomLeft[0], bottomLeft[1]), width, height,
                      fill=False,
                      color="purple",
                      linewidth=2)
