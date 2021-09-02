@@ -1,4 +1,16 @@
 {
   "height": 160,
-  "speed": 50
+  "speed": 50,
+  "rotationAngle": 15,
+  "sleep": 3,
+
+  "_COMMENT_": "these parameters are for PointDataCleaning.py",
+  "voxel_size": 0.01,
+  "K": 5,
+  "nb_neighbors": 30,
+  "std_ratio": 5.0,
+  "radius": 0.05,
+
+  "__COMMENT__": "this parameter is for hierarchicalClustering",
+  "thresh": 1.5
 }

@@ -1,16 +1,10 @@
 from os import chdir, system
 from sklearn.cluster import KMeans
-from numpy import array, asarray
-from math import sqrt
-from numpy import vstack
+from numpy import array, asarray, max, vstack
+from math import sqrt, tan, degrees
 from open3d.cpu.pybind.io import read_point_cloud
-import open3d
 from pandas import DataFrame
 from pyntcloud import PyntCloud
-import math
-import matplotlib.pyplot as plt
-import numpy
-import numpy as np
 import scipy.cluster.hierarchy as hcluster
 
 
@@ -35,6 +29,7 @@ def runOrbSlam2():
 
 
 # K means algorithm to find clusters centers
+# algorithm is not used
 def KMeansAlgo(x, y, numberOfClusters):
     points = []
     for i in range(len(x)):
@@ -77,10 +72,10 @@ def makeCloud(x, y, z):
     cloud.to_file("PointData/output.ply")
 
     cloud = read_point_cloud("PointData/output.ply")  # Read the point cloud
-    # open3d.visualization.draw_geometries([cloud])
     return cloud
 
 
+# returns coordinates of all the points outside the box
 def pointsOutOfBox(x, y, box):
     bottomLeft = box[0]
     topRight = box[2]
@@ -98,32 +93,31 @@ def pointsOutOfBox(x, y, box):
 
 
 # https://stackoverflow.com/questions/10136470/unsupervised-clustering-with-unknown-number-of-clusters
+# https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.fclusterdata.html#scipy.cluster.hierarchy.fclusterdata
+"""
+https://en.wikipedia.org/wiki/Hierarchical_clustering:
+hierarchical clustering (also called hierarchical cluster analysis or HCA)
+is a method of cluster analysis which seeks to build a hierarchy of clusters.
+"""
 def hierarchicalClustering(x, y, thresh=1.5):
     points = []
     for i in range(len(x)):
         points.append([x[i], y[i]])
 
-    data = numpy.array(points)
+    data = array(points)
 
     # clustering
     clustersIndex = hcluster.fclusterdata(data, thresh, criterion="distance")
 
     clustersIndex = list(clustersIndex)
 
-    numOfClusters = numpy.max(clustersIndex)
+    numOfClusters = max(clustersIndex)
 
     clusters = [[] for _ in range(numOfClusters)]
 
     for i in range(len(points)):
         index = clustersIndex[i] - 1
         clusters[index].append(points[i])
-
-    # plotting
-    plt.scatter(*numpy.transpose(data), c=clustersIndex)
-    plt.axis("equal")
-    title = "threshold: %f, number of clusters: %d" % (thresh, len(set(clustersIndex)))
-    plt.title(title)
-    plt.show()
 
     return clusters
 
@@ -145,6 +139,7 @@ def getClustersCenters(clusters):
 def moveToExit(drone, exits):
     dronePosition = (0, 0)
 
+    # choose the furthest exit
     maxDistance = float('-inf')
     furthestPoint = None
     for exitPoint in exits:
@@ -153,22 +148,23 @@ def moveToExit(drone, exits):
             maxDistance = distance
             furthestPoint = exitPoint
 
+    # calculate angle
     x, y = furthestPoint
-    angle = 90 - int(math.degrees(math.tan(float(abs(y) / abs(x)))))
-    print(x, y)
-    if x > 0 and y < 0:
+    print(furthestPoint)
+    angle = 90 - int(degrees(tan(float(abs(y) / abs(x)))))
+    if x > 0 > y:
         angle += 90
     elif x < 0 and y < 0:
         angle += 180
-    elif x < 0 and y > 0:
+    elif x < 0 < y:
         angle += 270
 
-    print(angle)
     drone.rotate_clockwise(angle)
+
+    # 1 unit in ORB_SLAM2 is about 160cm in real life
     distance = int(maxDistance * 160)
     print("distance ", distance)
     while distance > 500:
         drone.move_forward(500)
         distance -= 500
     drone.move_forward(distance)
-

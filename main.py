@@ -1,128 +1,86 @@
-import json
-
+from json import load
 from djitellopy import Tello
 from time import sleep
-from utils import *
 from plot import *
 from ExitFinding import *
 from PointCloudCleaning import *
-from testDensity import *
-import numpy
+from threading import Thread
 
-import threading
-
-ROTATE_ANGLE = 30
 MAX_ANGLE = 360
-val = True
 
 
+# move drone up and down for focus
 def move(drone):
     drone.move_up(20)
     drone.move_down(20)
 
 
-def droneWait():
-    while val:
-        drone.move_up(20)
-        drone.move_down(20)
-
-
-def drone360():
-    with open('config.json') as f:
-        data = json.load(f)
+# move the drone 360 degrees and run ORBSLAM2 in a separate thread
+# returns drone object
+def drone360(data):
     drone = Tello()
     drone.connect()
-    drone.speed = data["speed"]
+    drone.speed = int(data["speed"])
 
-    print(drone.get_battery())
+    rotationAngle = int(data["rotationAngle"])
+    height = int(data["height"])
+    sleepTime = int(data["sleep"])
 
     drone.streamoff()
     drone.streamon()
 
-    x = threading.Thread(target=runOrbSlam2)
-    x.start()
+    ORBSLAM2_THREAD = Thread(target=runOrbSlam2)
+    ORBSLAM2_THREAD.start()
 
     drone.takeoff()
 
-    drone.move_up(80)
+    drone.move_up(int(height - drone.get_height()))
 
     angle = 0
 
-    sleep(4)
+    sleep(sleepTime)
 
-    print('Starting ...')
+    print('Starting ORB_SLAM2 ...')
 
-    while angle <= (MAX_ANGLE + 15):
-        drone.rotate_clockwise(15)
+    while angle <= (MAX_ANGLE + rotationAngle):
+        drone.rotate_clockwise(rotationAngle)
         move(drone)
-        angle += 15
-        sleep(3)
+        angle += rotationAngle
+        sleep(sleepTime)
 
     drone.streamoff()
 
-    t = threading.Thread(target=droneWait)
-    t.start()
+    drone.end()
 
-    x.join()
+    ORBSLAM2_THREAD.join()
     return drone
 
 
+# load the config.json file
+def loadConfig():
+    with open('config.json') as f:
+        return load(f)
+
+
 if __name__ == '__main__':
-    # plot2D(x, z)
-    # # plotConvexHull(x, y)
-    # KMeansAlgo(x, z)
-    # x1 = [2.87091167, 0.39248181, 1.67489614, 15.01441968]
-    # y1 = [1.00472885, 1.02433301, -0.04094384, 0.6501901]
-    # plot2D(x1, y1)
-    drone = drone360()
-    # x, y, z = readCSV('PointData/pointDataJackobs.csv')
-    x, y, z = readCSV('/tmp/pointData.csv')
-    pcd = makeCloud(x, y, z)
-    inlierPCD, outlierPCD = removeStatisticalOutlier(pcd, voxel_size=0.01, nb_neighbors=30, std_ratio=5.0)
-    outX, outY, outZ = pcdToArrays(outlierPCD)
-    inX, inY, inZ = pcdToArrays(inlierPCD)
-    # plot2D(inX, inZ)
-    # showCloud(outX, outY, outZ)
-    # showCloud(inX, inY, inZ)
-    # plot2D(inX, inZ)
-    # box = findBestBoundingBox(x, y, z)
+    data = loadConfig()
+    while True:
+        drone = drone360(data)
+        x, y, z = readCSV('/tmp/pointData.csv')
+        pcd = makeCloud(x, y, z)
+        inlierPCD, outlierPCD = removeStatisticalOutlier(pcd, voxel_size=float(data["voxel_size"]),
+                                                         nb_neighbors=int(data["nb_neighbors"]),
+                                                         std_ratio=float(data["std_ratio"]))
+        inX, inY, inZ = pcdToArrays(inlierPCD)
+        box = getAverageRectangle(inX, inZ)
 
-    box = getAverageRectangle(inX, inZ)
-    plot2DWithBox(inX, inZ, box)
-    x, y = pointsOutOfBox(inX, inZ, box)
-    # x = x[:] + x[:] + [(-1 * point) for point in x]
-    # y = y[:] + [(-1 * point) for point in y] + y[:]
-    clusters = hierarchicalClustering(x, y)
-    clustersCenters = getClustersCenters(clusters)
-    val = False
+        plot2DWithBox(inX, inZ, box)
+        xOut, yOut = pointsOutOfBox(inX, inZ, box)
+        clusters = hierarchicalClustering(xOut, yOut, float(data["thresh"]))
+        clustersCenters = getClustersCenters(clusters)
 
-    print(clustersCenters)
-
-    moveToExit(drone, clustersCenters)
-    drone.end()
-
-    # print(x)
-    # print(y)
-    # box = getAverageRectangle(x, z)
-
-    # points = []
-    # for i in range(len(inX)):
-    #     points.append((inX[i], inZ[i]))
-    # print(getBoxFitness(box, points))
-
-    # plot2DWithBox(inX, inZ, box)
-    #
-    # centers = KMeansAlgo(x, z, numberOfClusters=5)
-    # print('Center of clusters: ', centers)
-    # plot2DWithClustersCenters(x, z, centers)
-
-    # for i in range(len(x)):
-    #     x[i] = x[i] * 100
-    #
-    # for i in range(len(y)):
-    #     y[i] = y[i] * 100
-    #
-    # for i in range(len(z)):
-    #     z[i] = z[i] * 100
-    #
-    # plot2D(x, z)
+        # break if there are no exits in the room
+        if len(clustersCenters) == 0:
+            break
+        moveToExit(drone, clustersCenters)
+        drone.end()
