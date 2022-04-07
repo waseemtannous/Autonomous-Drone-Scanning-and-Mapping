@@ -25,3 +25,6 @@ The University of Haifa RBD Labs: https://www.rbd-labs.com/
 
 Link to the ORB_SLAM2 repository: https://github.com/raulmur/ORB_SLAM2
 
+
+## Installation Guide
+An installation guide can be found under the "documents" directory.
